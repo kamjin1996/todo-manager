@@ -22,14 +22,17 @@ public class TodoAddResult extends BaseCommandResult {
         super(content, exitResult);
     }
 
-    public static TodoAddResult create(List<TodoItem> all, int index) {
+    public TodoAddResult create(List<TodoItem> all, int index) {
         StringBuilder sb = new StringBuilder();
         all.forEach(x -> {
             sb.append(x.getIndex())
                     .append(".")
+                    .append(x.getIsDone() ? "[Done] " : "")
                     .append(x.getContent())
                     .append("\n");
         });
-        return new TodoAddResult(sb.toString(), String.format("Item %s added", index));
+        this.setContent(sb.toString());
+        this.setExitResult(String.format("Item %s added", index));
+        return this;
     }
 }

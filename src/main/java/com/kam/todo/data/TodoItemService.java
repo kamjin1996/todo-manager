@@ -3,6 +3,7 @@ package com.kam.todo.data;
 import com.kam.todo.bean.TodoItem;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author kam
@@ -14,6 +15,19 @@ import java.util.List;
  */
 public interface TodoItemService {
 
+    /**
+     * 获取索引值
+     *
+     * @return
+     */
+    AtomicInteger getIndex();
+
+    /**
+     * 设置索引
+     *
+     * @param index
+     */
+    void setIndex(AtomicInteger index);
 
     /**
      * 保存todoItem
@@ -21,7 +35,7 @@ public interface TodoItemService {
      * @param items
      * @return
      */
-     List<TodoItem>  saveAll(List<TodoItem> items);
+    List<TodoItem> saveAll(List<TodoItem> items);
 
     /**
      * 保存todoItem

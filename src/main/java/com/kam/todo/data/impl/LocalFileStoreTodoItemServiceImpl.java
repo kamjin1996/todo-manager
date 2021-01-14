@@ -9,8 +9,13 @@ import com.kam.todo.exception.LocalFileException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.OptionalInt;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * @author kam
@@ -22,15 +27,76 @@ import java.util.Objects;
  */
 public class LocalFileStoreTodoItemServiceImpl implements TodoItemService {
 
-    private static File todoLocalFile = new File("F://todo.txt");
+    private File todoLocalFile;//默认
 
     private TodoItemService delegate;
 
+    private AtomicInteger index = new AtomicInteger(0);
+
     public LocalFileStoreTodoItemServiceImpl() {
+        init();
     }
 
     public LocalFileStoreTodoItemServiceImpl(TodoItemService todoItemService) {
+        this();
         this.delegate = todoItemService;
+        putData2Delegate(this.delegate);
+    }
+
+    public LocalFileStoreTodoItemServiceImpl(TodoItemService todoItemService, File todoLocalFile) {
+        this(todoItemService);
+        this.todoLocalFile = todoLocalFile;
+    }
+
+    /**
+     * 将数据和索引从文件同步到delegate
+     */
+    private void putData2Delegate(TodoItemService delegate) {
+        //设置索引
+        delegate.setIndex(this.index);
+
+        //放入数据
+        List<TodoItem> localFileTodoItems = readAllTodoItemsInFile();
+
+        if (CollectionUtil.isNotEmpty(localFileTodoItems)) {
+            delegate.saveAll(localFileTodoItems);
+        }
+    }
+
+    /**
+     * 初始化
+     */
+    private void init() {
+        //初始化文件
+        todoLocalFile = new File("F://todo.txt");
+
+        //不存在则创建
+        if (!FileUtil.exist(todoLocalFile)) {
+            try {
+                todoLocalFile.createNewFile();
+            } catch (IOException e) {
+                throw new LocalFileException("文件创建失败");
+            }
+        }
+
+        //读取最大索引
+        //初始化索引
+        List<TodoItem> localFileTodoItems = readAllTodoItemsInFile();
+        //放入索引
+        OptionalInt max = localFileTodoItems.stream()
+                .mapToInt(TodoItem::getIndex)
+                .max();
+        max.ifPresent(x -> index.set(x));
+    }
+
+    @Override
+    public AtomicInteger getIndex() {
+        return index;
+    }
+
+    @Override
+    public void setIndex(AtomicInteger index) {
+        this.index = index;
     }
 
     @Override
@@ -43,66 +109,121 @@ public class LocalFileStoreTodoItemServiceImpl implements TodoItemService {
 
     @Override
     public TodoItem save(TodoItem item) {
-        item = this.delegate.save(item);
+        if (Objects.nonNull(this.delegate)) {
+            item = this.delegate.save(item);
+        }
+
         //存到本地
         if (!FileUtil.exist(todoLocalFile)) {
             try {
-                boolean newFile = todoLocalFile.createNewFile();
-                if (newFile) {
-                    String jsonTodoItem = JSONUtil.toJsonStr(item);
-                    FileUtil.appendString(jsonTodoItem, todoLocalFile, "utf-8");
-                }
+                todoLocalFile.createNewFile();
             } catch (IOException e) {
                 throw new LocalFileException("文件创建失败");
             }
         }
+        String jsonTodoItem = JSONUtil.toJsonStr(item);
+        FileUtil.appendUtf8String(jsonTodoItem + "\n", todoLocalFile);
         return item;
     }
 
     @Override
     public TodoItem save(String content) {
-        TodoItem item = this.delegate.save(content);
-        return this.save(item);
+        TodoItem todoItem = new TodoItem();
+        todoItem.setContent(content);
+        todoItem.setIndex(index.incrementAndGet());
+        todoItem.setIsDone(Boolean.FALSE);
+        return this.save(todoItem);
     }
 
     @Override
     public List<TodoItem> listAll() {
-        List<TodoItem> todoItems = this.delegate.listAll();
+        List<TodoItem> todoItems = null;
+        if (Objects.nonNull(this.delegate)) {
+            todoItems = this.delegate.listAll();
+        }
+
         if (CollectionUtil.isEmpty(todoItems)) {
-            List<String> jsonArray = FileUtil.readLines(todoLocalFile, "utf-8");
-            List<TodoItem> localFileTodoItems = JSONUtil.toList(JSONUtil.parseArray(jsonArray), TodoItem.class);
-            this.delegate.saveAll(localFileTodoItems);
-            return localFileTodoItems;
+            if (FileUtil.exist(todoLocalFile)) {
+                List<TodoItem> localFileTodoItems = readAllTodoItemsInFile();
+
+                if (CollectionUtil.isNotEmpty(localFileTodoItems) && Objects.nonNull(this.delegate)) {
+                    this.delegate.saveAll(localFileTodoItems);
+                }
+
+                return localFileTodoItems;
+            }
+
         }
         return todoItems;
     }
 
     @Override
     public TodoItem done(Integer index) {
-        TodoItem done = this.delegate.done(index);
+        AtomicReference<TodoItem> todoItem = new AtomicReference<>();
+        if (Objects.nonNull(this.delegate)) {
+            this.delegate.done(index);
+        }
 
         //删除原数据
-        if (FileUtil.exist(todoLocalFile)) {
-            //回写新数据
-            List<String> all = FileUtil.readLines(todoLocalFile, "utf-8");
-            all.stream().forEach(x -> {
-                TodoItem todoItem = JSONUtil.toBean(x, TodoItem.class);
-                if (Objects.isNull(todoItem)) {
-                    return;
-                }
-                if (Objects.equals(index, todoItem.getIndex())) {
-                    //更改并回写到文件
-                }
-            });
-
-
+        if (!FileUtil.exist(todoLocalFile)) {
+            return null;
         }
-        return done;
 
+        List<TodoItem> all = readAllTodoItemsInFile();
+        all.stream().filter(x -> Objects.equals(index, x.getIndex())).forEach(x -> {
+            x.setIsDone(Boolean.TRUE);
+            todoItem.set(x);
+        });
+        FileUtil.del(todoLocalFile);
+        try {
+            todoLocalFile.createNewFile();
+        } catch (IOException e) {
+            throw new LocalFileException("文件创建失败");
+        }
+        List<String> collect = all.stream()
+                .map(JSONUtil::toJsonStr)
+                .collect(Collectors.toList());
+        FileUtil.appendUtf8Lines(collect, todoLocalFile);
+        return todoItem.get();
+    }
+
+    /**
+     * 从文件中读取所有todo
+     *
+     * @return
+     */
+    private List<TodoItem> readAllTodoItemsInFile() {
+        if (FileUtil.exist(todoLocalFile)) {
+            List<String> jsonArray = FileUtil.readUtf8Lines(todoLocalFile);
+            return jsonArray.stream()
+                    .map(x -> JSONUtil.toBean(x, TodoItem.class))
+                    .collect(Collectors.toList());
+        }
+        return new ArrayList<>();
     }
 
     @Override
     public List<TodoItem> listUndone() {
-        return null;
+        List<TodoItem> todoItems = null;
+        if (Objects.nonNull(delegate)) {
+            todoItems = this.delegate.listUndone();
+        }
+
+        if (CollectionUtil.isEmpty(todoItems)) {
+            if (FileUtil.exist(todoLocalFile)) {
+                List<TodoItem> localFileTodoItems = readAllTodoItemsInFile();
+
+                //只查询undone的
+                List<TodoItem> collect = localFileTodoItems.stream()
+                        .filter(x -> !x.getIsDone())
+                        .collect(Collectors.toList());
+                if (CollectionUtil.isNotEmpty(collect) && Objects.nonNull(delegate)) {
+                    this.delegate.saveAll(collect);
+                }
+
+                return collect;
+            }
+        }
+        return todoItems;
     }
 }

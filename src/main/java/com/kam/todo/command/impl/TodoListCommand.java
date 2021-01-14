@@ -33,9 +33,9 @@ public class TodoListCommand implements Command<TodoListResult> {
         switch (index) {
             case " --all":
                 //需查询已完成的
-                return TodoListResult.create(this.todoItemService.listAll(), true);
+                return new TodoListResult().create(this.todoItemService.listAll(), true);
             default:
-                return TodoListResult.create(this.todoItemService.listUndone(), false);
+                return new TodoListResult().create(this.todoItemService.listUndone(), false);
         }
     }
 }

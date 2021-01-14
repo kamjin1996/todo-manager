@@ -32,9 +32,9 @@ public abstract class BaseCommandResult {
     }
 
     /**
-     * 打印
+     * 输出结果 实现为控制台打印
      */
-    public void print() {
+    public void output() {
         System.out.println(content + "\n" + exitResult);
     }
 }

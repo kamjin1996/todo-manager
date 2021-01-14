@@ -45,7 +45,7 @@ public class TodoCommandApplication {
                 BaseCommandResult result = command.exec(inputLine);
 
                 //输出：打印结果
-                result.print();
+                result.output();
             }
         }
     }

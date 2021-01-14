@@ -19,7 +19,15 @@ public class TodoDoneResult extends BaseCommandResult {
         super(content, exitResult);
     }
 
-    public static TodoDoneResult create(int index) {
-        return new TodoDoneResult("", String.format("Item %s done", index));
+    public TodoDoneResult create(int index) {
+        this.setContent("");
+        this.setExitResult(String.format("Item %s done", index));
+        return this;
+    }
+
+    public TodoDoneResult wrong(String msg) {
+        this.setContent("");
+        this.setExitResult(msg);
+        return this;
     }
 }

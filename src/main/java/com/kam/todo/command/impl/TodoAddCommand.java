@@ -36,6 +36,6 @@ public class TodoAddCommand implements Command<TodoAddResult> {
 
         TodoItem item = this.todoItemService.save(content);
         List<TodoItem> todoItems = this.todoItemService.listAll();
-        return TodoAddResult.create(todoItems, item.getIndex());
+        return new TodoAddResult().create(todoItems, item.getIndex());
     }
 }

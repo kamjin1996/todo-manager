@@ -2,6 +2,7 @@ package com.kam.todo.bean.enums;
 
 import lombok.Getter;
 
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -15,22 +16,36 @@ import java.util.regex.Pattern;
 @Getter
 public enum CommandEnum {
 
+    /**
+     * _todo add 命令
+     */
     TODO_ADD("todo add ", "todo add <item>") {
         @Override
         public Pattern getPattern() {
             return TODO_ADD_PATTERN;
         }
-    }, TODO_DONE("todo done ", "todo done <itemIndex>") {
+    },
+    /**
+     * _todo done 命令
+     */
+    TODO_DONE("todo done ", "todo done <itemIndex>") {
         @Override
         public Pattern getPattern() {
             return TODO_DONE_PATTERN;
         }
-    }, TODO_LIST("todo list", "todo list [option]--all") {
+    },
+    /**
+     * _todo list 命令 支持可选参数
+     */
+    TODO_LIST("todo list", "todo list [option]--all") {
         @Override
         public Pattern getPattern() {
             return TODO_LIST_PATTERN;
         }
     },
+    /**
+     * 表示未定义命令
+     */
     UNDEFINED("", "") {
         @Override
         public Pattern getPattern() {
@@ -67,7 +82,7 @@ public enum CommandEnum {
         sb.append("\n");
         for (CommandEnum value : CommandEnum.values()) {
             String help = value.getHelp();
-            if ("" != help) {
+            if (!Objects.equals(help, "")) {
                 sb.append(help);
                 sb.append("\n");
             }

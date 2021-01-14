@@ -22,7 +22,7 @@ public class TodoListResult extends BaseCommandResult {
         super(content, exitResult);
     }
 
-    public static TodoListResult create(List<TodoItem> todoItems, boolean isShowDoneCount) {
+    public TodoListResult create(List<TodoItem> todoItems, boolean isShowDoneCount) {
         StringBuilder sb = new StringBuilder();
         todoItems.forEach(x -> {
             sb.append(x.getIndex())
@@ -33,8 +33,10 @@ public class TodoListResult extends BaseCommandResult {
         });
         int count = todoItems.size();
         long doneSize = todoItems.stream().filter(TodoItem::getIsDone).count();
-        return new TodoListResult(sb.toString(), isShowDoneCount ?
+        this.setContent(sb.toString());
+        this.setExitResult( isShowDoneCount ?
                 String.format("Total: %s items， %s item done", count, doneSize)
                 : String.format("Total: %s items", count));
+        return this;
     }
 }

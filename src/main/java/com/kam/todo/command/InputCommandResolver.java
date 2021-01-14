@@ -6,6 +6,7 @@ import com.kam.todo.command.impl.TodoDoneCommand;
 import com.kam.todo.command.impl.TodoListCommand;
 import com.kam.todo.command.impl.WrongCommand;
 import com.kam.todo.data.TodoItemService;
+import com.kam.todo.data.impl.LocalFileStoreTodoItemServiceImpl;
 import com.kam.todo.data.impl.MemoryTodoItemServiceImpl;
 
 import java.util.HashMap;
@@ -29,7 +30,8 @@ public class InputCommandResolver implements CommandResolver<String> {
     private static final Map<CommandEnum, Command<?>> commandServiceMap = new HashMap<>();
 
     static {
-        TodoItemService todoItemService = new MemoryTodoItemServiceImpl();
+        //支持文件存储 支持内存存储
+        TodoItemService todoItemService = new LocalFileStoreTodoItemServiceImpl(new MemoryTodoItemServiceImpl());
         commandServiceMap.put(CommandEnum.TODO_ADD, new TodoAddCommand(todoItemService));
         commandServiceMap.put(CommandEnum.TODO_DONE, new TodoDoneCommand(todoItemService));
         commandServiceMap.put(CommandEnum.TODO_LIST, new TodoListCommand(todoItemService));

@@ -7,7 +7,7 @@ import com.kam.todo.bean.BaseCommandResult;
  * @since 2021/1/13 0013
  *
  * <p>
- * todoAddResult
+ * 错误的命令结果返回
  * </p>
  */
 public class WrongCommandResult extends BaseCommandResult {
@@ -19,7 +19,9 @@ public class WrongCommandResult extends BaseCommandResult {
         super(content, exitResult);
     }
 
-    public static <T> T create() {
-        return (T) new WrongCommandResult("", "命令错误 请对照命令表重新输入");
+    public WrongCommandResult create() {
+        this.setContent("");
+        this.setExitResult("命令错误 请对照命令表重新输入");
+        return this;
     }
 }

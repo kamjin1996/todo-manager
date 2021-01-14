@@ -21,7 +21,7 @@ public class WrongCommand implements Command<WrongCommandResult> {
 
     @Override
     public WrongCommandResult exec(String input) {
-        return WrongCommandResult.create();
+        return new WrongCommandResult().create();
     }
 
 }

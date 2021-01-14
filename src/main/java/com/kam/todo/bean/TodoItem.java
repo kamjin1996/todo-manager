@@ -7,15 +7,24 @@ import lombok.Data;
  * @since 2021/1/13 0013
  *
  * <p>
- * 待做项Item
+ * Todo项的Item
  * </p>
  */
 @Data
 public class TodoItem {
 
+    /**
+     * todo的内容体 任何非空字符串
+     */
     private String content;
 
+    /**
+     * todo项的索引
+     */
     private Integer index;
 
-    private Boolean isDone;
+    /**
+     * 是否已完成
+     */
+    private Boolean isDone = Boolean.FALSE;
 }

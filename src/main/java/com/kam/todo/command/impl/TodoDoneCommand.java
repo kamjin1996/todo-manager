@@ -3,9 +3,10 @@ package com.kam.todo.command.impl;
 import com.kam.todo.bean.TodoItem;
 import com.kam.todo.bean.enums.CommandEnum;
 import com.kam.todo.bean.result.TodoDoneResult;
-import com.kam.todo.bean.result.WrongCommandResult;
 import com.kam.todo.command.Command;
 import com.kam.todo.data.TodoItemService;
+
+import java.util.Objects;
 
 /**
  * @author kam
@@ -36,10 +37,14 @@ public class TodoDoneCommand implements Command<TodoDoneResult> {
         try {
             indexInt = Integer.parseInt(index);
         } catch (NumberFormatException e) {
-            return WrongCommandResult.create();
+            return new TodoDoneResult().wrong("错误的索引");
         }
 
-        TodoItem item = this.todoItemService.done(indexInt - 1);//需要减去1 因为数组下标默认从0开始
-        return TodoDoneResult.create(item.getIndex());
+        TodoItem item = this.todoItemService.done(indexInt);
+
+        if (Objects.isNull(item)) {
+            return new TodoDoneResult().wrong("todoItem不存在 index有误");
+        }
+        return new TodoDoneResult().create(item.getIndex());
     }
 }
