@@ -91,11 +91,11 @@ public class MemoryTodoItemServiceImpl implements TodoItemService {
         if (Objects.nonNull(this.delegate)) {
             this.delegate.done(index);
         }
-        index = index - 1;//需要减去1 因为数组下标默认从0开始
-        if (index > items.size()) {
+        int arrIndex = index - 1;//需要减去1 因为数组下标默认从0开始 但不能对原值赋值 会有问题
+        if (arrIndex >= items.size()) {
             return null;
         }
-        TodoItem todoItem = items.get(index);
+        TodoItem todoItem = items.get(arrIndex);
         if (Objects.nonNull(todoItem)) {
             todoItem.setIsDone(Boolean.TRUE);
         }
